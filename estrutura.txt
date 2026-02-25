@@ -1,0 +1,22 @@
+sistema_chamados/
+├── app.py
+├── config.py
+├── models.py
+├── forms.py
+├── requirements.txt
+├── .env
+├── templates/
+│   ├── base.html
+│   ├── login.html
+│   ├── cadastro_padrao.html
+│   ├── dashboard.html
+│   ├── criar_chamado.html
+│   ├── listar_chamados.html
+│   ├── detalhe_chamado.html
+│   ├── usuarios.html
+│   ├── cadastro_usuario.html
+│   ├── confirmar_exclusao_usuario.html
+│   ├── usuarios_excluidos.html
+│   └── perfil.html
+└── static/
+    └── style.css
