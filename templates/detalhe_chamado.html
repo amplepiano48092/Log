@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h4>Chamado #{{ chamado.id }} - {{ chamado.titulo }}</h4>
+                <div>
+                    {% if chamado.status == 'aberto' %}
+                        <span class="badge bg-warning">Aberto</span>
+                    {% elif chamado.status == 'em_andamento' %}
+                        <span class="badge bg-info">Em Andamento</span>
+                    {% elif chamado.status == 'resolvido' %}
+                        <span class="badge bg-success">Resolvido</span>
+                    {% else %}
+                        <span class="badge bg-secondary">{{ chamado.status }}</span>
+                    {% endif %}
+                    
+                    {% if chamado.prioridade == 'baixa' %}
+                        <span class="badge bg-success">Baixa Prioridade</span>
+                    {% elif chamado.prioridade == 'media' %}
+                        <span class="badge bg-info">Média Prioridade</span>
+                    {% elif chamado.prioridade == 'alta' %}
+                        <span class="badge bg-warning">Alta Prioridade</span>
+                    {% else %}
+                        <span class="badge bg-danger">Urgente</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <p><strong>Criado por:</strong> {{ chamado.criador.nome }}</p>
+                        <p><strong>Data de criação:</strong> {{ chamado.data_criacao.strftime('%d/%m/%Y %H:%M') }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Técnico responsável:</strong> {{ chamado.tecnico.nome if chamado.tecnico else 'Não atribuído' }}</p>
+                        {% if chamado.data_atualizacao %}
+                        <p><strong>Última atualização:</strong> {{ chamado.data_atualizacao.strftime('%d/%m/%Y %H:%M') }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if chamado.localizacao %}
+                <p><strong>Localização:</strong> {{ chamado.localizacao }}</p>
+                {% endif %}
+                
+                {% if chamado.equipamento %}
+                <p><strong>Equipamento:</strong> {{ chamado.equipamento }}</p>
+                {% endif %}
+                
+                <hr>
+                
+                <h5>Descrição</h5>
+                <p class="lead">{{ chamado.descricao }}</p>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5>Histórico</h5>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    {% for item in historico %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <strong>{{ item.usuario.nome }}</strong>
+                            <small class="text-muted">{{ item.data_acao.strftime('%d/%m/%Y %H:%M') }}</small>
+                        </div>
+                        <p>{{ item.descricao }}</p>
+                        {% if not loop.last %}<hr>{% endif %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted">Nenhum histórico disponível.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% if current_user.is_admin %}
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-warning">
+                <h5>Atualizar Chamado</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('atualizar_chamado', id=chamado.id) }}">
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <select name="status" class="form-select">
+                            <option value="aberto" {% if chamado.status == 'aberto' %}selected{% endif %}>Aberto</option>
+                            <option value="em_andamento" {% if chamado.status == 'em_andamento' %}selected{% endif %}>Em Andamento</option>
+                            <option value="resolvido" {% if chamado.status == 'resolvido' %}selected{% endif %}>Resolvido</option>
+                            <option value="fechado" {% if chamado.status == 'fechado' %}selected{% endif %}>Fechado</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Prioridade</label>
+                        <select name="prioridade" class="form-select">
+                            <option value="baixa" {% if chamado.prioridade == 'baixa' %}selected{% endif %}>Baixa</option>
+                            <option value="media" {% if chamado.prioridade == 'media' %}selected{% endif %}>Média</option>
+                            <option value="alta" {% if chamado.prioridade == 'alta' %}selected{% endif %}>Alta</option>
+                            <option value="urgente" {% if chamado.prioridade == 'urgente' %}selected{% endif %}>Urgente</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Atribuir Técnico</label>
+                        <select name="tecnico_id" class="form-select">
+                            <option value="">Selecione um técnico</option>
+                            {% for usuario in usuarios if not usuario.is_admin %}
+                            <option value="{{ usuario.id }}" {% if chamado.tecnico_id == usuario.id %}selected{% endif %}>
+                                {{ usuario.nome }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Comentário</label>
+                        <textarea name="comentario" class="form-control" rows="3" placeholder="Adicione um comentário sobre a atualização..."></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-check-circle"></i> Atualizar Chamado
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-list-task"></i> Chamados</h1>
+    <a href="{{ url_for('novo_chamado') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Novo Chamado
+    </a>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5>Filtros</h5>
+    </div>
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select">
+                    <option value="todos" {% if request.args.get('status') == 'todos' %}selected{% endif %}>Todos</option>
+                    <option value="aberto" {% if request.args.get('status') == 'aberto' %}selected{% endif %}>Aberto</option>
+                    <option value="em_andamento" {% if request.args.get('status') == 'em_andamento' %}selected{% endif %}>Em Andamento</option>
+                    <option value="resolvido" {% if request.args.get('status') == 'resolvido' %}selected{% endif %}>Resolvido</option>
+                    <option value="fechado" {% if request.args.get('status') == 'fechado' %}selected{% endif %}>Fechado</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Prioridade</label>
+                <select name="prioridade" class="form-select">
+                    <option value="todos" {% if request.args.get('prioridade') == 'todos' %}selected{% endif %}>Todos</option>
+                    <option value="baixa" {% if request.args.get('prioridade') == 'baixa' %}selected{% endif %}>Baixa</option>
+                    <option value="media" {% if request.args.get('prioridade') == 'media' %}selected{% endif %}>Média</option>
+                    <option value="alta" {% if request.args.get('prioridade') == 'alta' %}selected{% endif %}>Alta</option>
+                    <option value="urgente" {% if request.args.get('prioridade') == 'urgente' %}selected{% endif %}>Urgente</option>
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="bi bi-funnel"></i> Filtrar
+                </button>
+                <a href="{{ url_for('listar_chamados') }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-counterclockwise"></i> Limpar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Título</th>
+                        <th>Status</th>
+                        <th>Prioridade</th>
+                        <th>Criado por</th>
+                        <th>Técnico</th>
+                        <th>Data</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for chamado in chamados.items %}
+                    <tr>
+                        <td>#{{ chamado.id }}</td>
+                        <td>{{ chamado.titulo[:50] }}{% if chamado.titulo|length > 50 %}...{% endif %}</td>
+                        <td>
+                            {% if chamado.status == 'aberto' %}
+                                <span class="badge bg-warning">Aberto</span>
+                            {% elif chamado.status == 'em_andamento' %}
+                                <span class="badge bg-info">Em Andamento</span>
+                            {% elif chamado.status == 'resolvido' %}
+                                <span class="badge bg-success">Resolvido</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ chamado.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if chamado.prioridade == 'baixa' %}
+                                <span class="badge bg-success">Baixa</span>
+                            {% elif chamado.prioridade == 'media' %}
+                                <span class="badge bg-info">Média</span>
+                            {% elif chamado.prioridade == 'alta' %}
+                                <span class="badge bg-warning">Alta</span>
+                            {% else %}
+                                <span class="badge bg-danger">Urgente</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ chamado.criador.nome }}</td>
+                        <td>{{ chamado.tecnico.nome if chamado.tecnico else 'Não atribuído' }}</td>
+                        <td>{{ chamado.data_criacao.strftime('%d/%m/%Y') }}</td>
+                        <td>
+                            <a href="{{ url_for('detalhe_chamado', id=chamado.id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center">Nenhum chamado encontrado.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Paginação -->
+        {% if chamados.pages > 1 %}
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+                {% if chamados.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('listar_chamados', page=chamados.prev_num, status=request.args.get('status'), prioridade=request.args.get('prioridade')) }}">
+                        Anterior
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for page_num in chamados.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if page_num %}
+                        {% if page_num == chamados.page %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_num }}</span>
+                        </li>
+                        {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('listar_chamados', page=page_num, status=request.args.get('status'), prioridade=request.args.get('prioridade')) }}">
+                                {{ page_num }}
+                            </a>
+                        </li>
+                        {% endif %}
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if chamados.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('listar_chamados', page=chamados.next_num, status=request.args.get('status'), prioridade=request.args.get('prioridade')) }}">
+                        Próxima
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
