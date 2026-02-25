@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white text-center">
+                <h4><i class="bi bi-person-plus-fill"></i> Cadastro de Usuário</h4>
+                <p class="mb-0">Crie sua conta para abrir chamados</p>
+            </div>
+            <div class="card-body">
+                <form method="POST" id="cadastroForm" class="needs-validation" novalidate>
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="bi bi-person"></i> Nome Completo
+                        </label>
+                        {{ form.nome(class="form-control", placeholder="Digite seu nome completo", id="nome") }}
+                        {% if form.nome.errors %}
+                            {% for error in form.nome.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="bi bi-envelope"></i> Email
+                        </label>
+                        {{ form.email(class="form-control", placeholder="seu@email.com", type="email", id="email") }}
+                        <div id="email-feedback" class="small mt-1"></div>
+                        {% if form.email.errors %}
+                            {% for error in form.email.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="bi bi-lock"></i> Senha
+                        </label>
+                        {{ form.senha(class="form-control", placeholder="******", id="senha") }}
+                        <div class="form-text">Mínimo de 6 caracteres</div>
+                        {% if form.senha.errors %}
+                            {% for error in form.senha.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="bi bi-lock-fill"></i> Confirmar Senha
+                        </label>
+                        {{ form.confirmar_senha(class="form-control", placeholder="******", id="confirmar_senha") }}
+                        <div id="senha-feedback" class="small mt-1"></div>
+                        {% if form.confirmar_senha.errors %}
+                            {% for error in form.confirmar_senha.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        {{ form.termos(class="form-check-input") }}
+                        <label class="form-check-label">
+                            Li e aceito os <a href="#" data-bs-toggle="modal" data-bs-target="#termosModal">termos de uso</a>
+                        </label>
+                        {% if form.termos.errors %}
+                            {% for error in form.termos.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-lg" id="btn-submit">
+                            <i class="bi bi-check-circle"></i> Cadastrar
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center">
+                <p class="mb-0">
+                    Já tem uma conta? 
+                    <a href="{{ url_for('login') }}" class="text-decoration-none">
+                        <i class="bi bi-box-arrow-in-right"></i> Faça login
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Termos de Uso -->
+<div class="modal fade" id="termosModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Termos de Uso</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <h6>1. Aceitação dos Termos</h6>
+                <p>Ao criar uma conta no Sistema de Chamados, você concorda com estes termos de uso.</p>
+                
+                <h6>2. Uso do Sistema</h6>
+                <p>O sistema é destinado exclusivamente para abertura e acompanhamento de chamados técnicos. Use-o de forma ética e responsável.</p>
+                
+                <h6>3. Responsabilidades</h6>
+                <p>Você é responsável pela veracidade das informações fornecidas nos chamados e pela segurança de sua senha.</p>
+                
+                <h6>4. Privacidade</h6>
+                <p>Seus dados serão utilizados apenas para fins de gestão de chamados e comunicações relacionadas.</p>
+                
+                <h6>5. Conduta</h6>
+                <p>Não é permitido usar linguagem ofensiva, compartilhar informações confidenciais ou fazer uso indevido do sistema.</p>
+                
+                <h6>6. Cancelamento</h6>
+                <p>O administrador pode suspender ou cancelar contas que violem estes termos.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Entendi</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Validação do formulário no lado do cliente
+(function() {
+    'use strict';
+    
+    var forms = document.querySelectorAll('.needs-validation');
+    
+    Array.prototype.slice.call(forms).forEach(function(form) {
+        form.addEventListener('submit', function(event) {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    });
+    
+    // Verificação de email em tempo real
+    $('#email').on('blur', function() {
+        var email = $(this).val();
+        if (email.length > 5) {
+            $.get('/verificar-email', {email: email}, function(data) {
+                var feedback = $('#email-feedback');
+                if (data.disponivel) {
+                    feedback.html('<span class="text-success"><i class="bi bi-check-circle"></i> Email disponível</span>');
+                } else {
+                    feedback.html('<span class="text-danger"><i class="bi bi-exclamation-circle"></i> ' + data.mensagem + '</span>');
+                    $('#email').get(0).setCustomValidity('Email já cadastrado');
+                }
+            });
+        }
+    });
+    
+    // Validação de senha em tempo real
+    var senha = document.getElementById('senha');
+    var confirmarSenha = document.getElementById('confirmar_senha');
+    var senhaFeedback = document.getElementById('senha-feedback');
+    
+    function validarSenhas() {
+        if (senha.value !== confirmarSenha.value) {
+            confirmarSenha.setCustomValidity('As senhas não conferem');
+            senhaFeedback.html('<span class="text-danger"><i class="bi bi-exclamation-circle"></i> As senhas não conferem</span>');
+        } else {
+            confirmarSenha.setCustomValidity('');
+            if (senha.value.length > 0) {
+                senhaFeedback.html('<span class="text-success"><i class="bi bi-check-circle"></i> Senhas conferem</span>');
+            } else {
+                senhaFeedback.html('');
+            }
+        }
+    }
+    
+    $('#senha, #confirmar_senha').on('keyup', validarSenhas);
+})();
+</script>
+{% endblock %}

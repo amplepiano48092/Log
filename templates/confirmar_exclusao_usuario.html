@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h4><i class="bi bi-exclamation-triangle"></i> Confirmar Exclusão de Usuário</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <strong>Atenção!</strong> Você está prestes a excluir um usuário do sistema.
+                </div>
+                
+                <h5>Dados do Usuário:</h5>
+                <table class="table">
+                    <tr>
+                        <th>ID:</th>
+                        <td>{{ usuario.id }}</td>
+                    </tr>
+                    <tr>
+                        <th>Nome:</th>
+                        <td>{{ usuario.nome }}</td>
+                    </tr>
+                    <tr>
+                        <th>Email:</th>
+                        <td>{{ usuario.email }}</td>
+                    </tr>
+                    <tr>
+                        <th>Tipo:</th>
+                        <td>
+                            {% if usuario.is_admin %}
+                                <span class="badge bg-primary">Administrador</span>
+                            {% elif usuario.is_tecnico %}
+                                <span class="badge bg-info">Técnico</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Usuário</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Data Cadastro:</th>
+                        <td>{{ usuario.data_cadastro.strftime('%d/%m/%Y') }}</td>
+                    </tr>
+                </table>
+                
+                <div class="alert alert-info">
+                    <h6>Chamados associados:</h6>
+                    <ul>
+                        <li>Chamados criados: <strong>{{ chamados_criados }}</strong></li>
+                        <li>Chamados como técnico: <strong>{{ chamados_tecnicos }}</strong></li>
+                    </ul>
+                </div>
+                
+                <hr>
+                
+                <h5>Opções de exclusão:</h5>
+                
+                <div class="row mt-4">
+                    {% if chamados_criados == 0 and chamados_tecnicos == 0 %}
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header bg-danger text-white">
+                                <h6>Exclusão Permanente</h6>
+                            </div>
+                            <div class="card-body">
+                                <p>Remove completamente o usuário do banco de dados.</p>
+                                <p class="text-danger"><strong>Esta ação não pode ser desfeita!</strong></p>
+                                <button class="btn btn-danger w-100" onclick="confirmarExclusaoPermanente({{ usuario.id }}, '{{ usuario.nome }}')">
+                                    <i class="bi bi-trash"></i> Excluir Permanentemente
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header bg-warning">
+                                <h6>Exclusão Suave (Soft Delete)</h6>
+                            </div>
+                            <div class="card-body">
+                                <p>Desativa o usuário mas mantém o histórico.</p>
+                                <p>Chamados abertos serão reatribuídos.</p>
+                                <p class="text-info"><strong>Pode ser revertido depois.</strong></p>
+                                <button class="btn btn-warning w-100" onclick="confirmarSoftDelete({{ usuario.id }}, '{{ usuario.nome }}')">
+                                    <i class="bi bi-person-dash"></i> Desativar Usuário
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('listar_usuarios') }}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Voltar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function confirmarExclusaoPermanente(userId, userName) {
+    if (confirm(`TEM CERTEZA que deseja EXCLUIR PERMANENTEMENTE o usuário ${userName}?\n\nEsta ação NÃO PODE SER DESFEITA!`)) {
+        $.ajax({
+            url: `/usuarios/${userId}/excluir-permanente`,
+            method: 'POST',
+            success: function(response) {
+                if (response.success) {
+                    alert(response.mensagem);
+                    window.location.href = "{{ url_for('listar_usuarios') }}";
+                } else {
+                    alert(response.error || 'Erro ao excluir usuário');
+                }
+            },
+            error: function(xhr) {
+                alert('Erro ao processar solicitação: ' + (xhr.responseJSON?.error || 'Erro desconhecido'));
+            }
+        });
+    }
+}
+
+function confirmarSoftDelete(userId, userName) {
+    if (confirm(`Deseja desativar o usuário ${userName}?\n\nO histórico será mantido e os chamados serão reatribuídos.`)) {
+        $.ajax({
+            url: `/usuarios/${userId}/soft-delete`,
+            method: 'POST',
+            success: function(response) {
+                if (response.success) {
+                    alert(response.mensagem);
+                    window.location.href = "{{ url_for('listar_usuarios') }}";
+                } else {
+                    alert(response.error || 'Erro ao desativar usuário');
+                }
+            },
+            error: function(xhr) {
+                alert('Erro ao processar solicitação: ' + (xhr.responseJSON?.error || 'Erro desconhecido'));
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

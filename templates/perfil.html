@@ -1,0 +1,431 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <!-- Card do Perfil -->
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-person-circle"></i> Meu Perfil</h5>
+            </div>
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="bi bi-person-circle" style="font-size: 5rem; color: #007bff;"></i>
+                </div>
+                <h4>{{ current_user.nome }}</h4>
+                <p class="text-muted">
+                    <i class="bi bi-envelope"></i> {{ current_user.email }}
+                </p>
+                
+                <!-- Badge de tipo de usuário -->
+                <div class="mb-3">
+                    {% if current_user.is_admin %}
+                        <span class="badge bg-primary" style="font-size: 1rem;">
+                            <i class="bi bi-shield-lock"></i> Administrador
+                        </span>
+                    {% elif current_user.is_tecnico %}
+                        <span class="badge bg-info" style="font-size: 1rem;">
+                            <i class="bi bi-tools"></i> Técnico
+                        </span>
+                    {% else %}
+                        <span class="badge bg-secondary" style="font-size: 1rem;">
+                            <i class="bi bi-person"></i> Usuário Padrão
+                        </span>
+                    {% endif %}
+                </div>
+                
+                <!-- Informações de cadastro -->
+                <div class="text-start mt-3 p-3 bg-light rounded">
+                    <p class="mb-2">
+                        <i class="bi bi-calendar-check text-primary"></i>
+                        <strong>Cadastro:</strong> {{ current_user.data_cadastro.strftime('%d/%m/%Y') }}
+                    </p>
+                    <p class="mb-2">
+                        <i class="bi bi-clock-history text-info"></i>
+                        <strong>Último acesso:</strong> 
+                        {% if current_user.ultimo_acesso %}
+                            {{ current_user.ultimo_acesso.strftime('%d/%m/%Y %H:%M') }}
+                        {% else %}
+                            Primeiro acesso
+                        {% endif %}
+                    </p>
+                    <p class="mb-0">
+                        <i class="bi bi-check-circle text-success"></i>
+                        <strong>Status:</strong> 
+                        {% if current_user.ativo %}
+                            <span class="text-success">Ativo</span>
+                        {% else %}
+                            <span class="text-danger">Inativo</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Botões de ação -->
+        <div class="card mt-3">
+            <div class="card-body">
+                <button class="btn btn-primary w-100 mb-2" data-bs-toggle="modal" data-bs-target="#editarPerfilModal">
+                    <i class="bi bi-pencil"></i> Editar Perfil
+                </button>
+                <button class="btn btn-warning w-100" data-bs-toggle="modal" data-bs-target="#alterarSenhaModal">
+                    <i class="bi bi-key"></i> Alterar Senha
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <!-- Estatísticas -->
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-graph-up"></i> Minhas Estatísticas</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card bg-primary text-white mb-3">
+                            <div class="card-body text-center">
+                                <h3>{{ total_chamados }}</h3>
+                                <small>Total</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-warning text-white mb-3">
+                            <div class="card-body text-center">
+                                <h3>{{ chamados_abertos }}</h3>
+                                <small>Abertos</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-info text-white mb-3">
+                            <div class="card-body text-center">
+                                <h3>{{ chamados_andamento }}</h3>
+                                <small>Em Andamento</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-success text-white mb-3">
+                            <div class="card-body text-center">
+                                <h3>{{ chamados_resolvidos }}</h3>
+                                <small>Resolvidos</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Últimos Chamados -->
+        <div class="card mt-3">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-list-task"></i> Meus Últimos Chamados</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Título</th>
+                                <th>Status</th>
+                                <th>Prioridade</th>
+                                <th>Data</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for chamado in ultimos_chamados %}
+                            <tr>
+                                <td>#{{ chamado.id }}</td>
+                                <td>{{ chamado.titulo[:30] }}{% if chamado.titulo|length > 30 %}...{% endif %}</td>
+                                <td>
+                                    {% if chamado.status == 'aberto' %}
+                                        <span class="badge bg-warning">Aberto</span>
+                                    {% elif chamado.status == 'em_andamento' %}
+                                        <span class="badge bg-info">Em Andamento</span>
+                                    {% elif chamado.status == 'resolvido' %}
+                                        <span class="badge bg-success">Resolvido</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ chamado.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if chamado.prioridade == 'baixa' %}
+                                        <span class="badge bg-success">Baixa</span>
+                                    {% elif chamado.prioridade == 'media' %}
+                                        <span class="badge bg-info">Média</span>
+                                    {% elif chamado.prioridade == 'alta' %}
+                                        <span class="badge bg-warning">Alta</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Urgente</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ chamado.data_criacao.strftime('%d/%m/%Y') }}</td>
+                                <td>
+                                    <a href="{{ url_for('detalhe_chamado', id=chamado.id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center">Nenhum chamado encontrado.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-center">
+                    <a href="{{ url_for('listar_chamados') }}" class="btn btn-outline-primary btn-sm">
+                        Ver Todos os Chamados
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Informações de Permissões -->
+        <div class="card mt-3">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Minhas Permissões</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-success"><i class="bi bi-check-circle"></i> Você pode:</h6>
+                        <ul class="list-group">
+                            <li class="list-group-item">
+                                <i class="bi bi-check-circle text-success"></i> Abrir novos chamados
+                            </li>
+                            <li class="list-group-item">
+                                <i class="bi bi-check-circle text-success"></i> Acompanhar seus chamados
+                            </li>
+                            <li class="list-group-item">
+                                <i class="bi bi-check-circle text-success"></i> Receber notificações por email
+                            </li>
+                            {% if current_user.is_tecnico %}
+                            <li class="list-group-item">
+                                <i class="bi bi-check-circle text-success"></i> Ser atribuído a chamados
+                            </li>
+                            {% endif %}
+                            {% if current_user.is_admin %}
+                            <li class="list-group-item">
+                                <i class="bi bi-check-circle text-success"></i> Gerenciar usuários
+                            </li>
+                            <li class="list-group-item">
+                                <i class="bi bi-check-circle text-success"></i> Gerenciar todos os chamados
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-danger"><i class="bi bi-x-circle"></i> Você NÃO pode:</h6>
+                        <ul class="list-group">
+                            {% if not current_user.is_admin %}
+                            <li class="list-group-item">
+                                <i class="bi bi-x-circle text-danger"></i> Gerenciar outros usuários
+                            </li>
+                            <li class="list-group-item">
+                                <i class="bi bi-x-circle text-danger"></i> Atualizar chamados de outros
+                            </li>
+                            {% endif %}
+                            {% if not current_user.is_tecnico and not current_user.is_admin %}
+                            <li class="list-group-item">
+                                <i class="bi bi-x-circle text-danger"></i> Ser atribuído como técnico
+                            </li>
+                            {% endif %}
+                            <li class="list-group-item">
+                                <i class="bi bi-x-circle text-danger"></i> Excluir chamados
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Perfil -->
+<div class="modal fade" id="editarPerfilModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="bi bi-pencil"></i> Editar Perfil</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formEditarPerfil">
+                    <div class="mb-3">
+                        <label class="form-label">Nome Completo</label>
+                        <input type="text" class="form-control" id="edit_nome" value="{{ current_user.nome }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" id="edit_email" value="{{ current_user.email }}" required>
+                        <div id="email-feedback" class="small mt-1"></div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="salvarPerfil()">
+                    <i class="bi bi-check-circle"></i> Salvar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Alterar Senha -->
+<div class="modal fade" id="alterarSenhaModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title"><i class="bi bi-key"></i> Alterar Senha</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formAlterarSenha">
+                    <div class="mb-3">
+                        <label class="form-label">Senha Atual</label>
+                        <input type="password" class="form-control" id="senha_atual" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nova Senha</label>
+                        <input type="password" class="form-control" id="nova_senha" required minlength="6">
+                        <div class="form-text">Mínimo de 6 caracteres</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Confirmar Nova Senha</label>
+                        <input type="password" class="form-control" id="confirmar_senha" required>
+                        <div id="senha-feedback" class="small mt-1"></div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="alterarSenha()">
+                    <i class="bi bi-check-circle"></i> Alterar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Função para salvar perfil
+function salvarPerfil() {
+    var nome = $('#edit_nome').val();
+    var email = $('#edit_email').val();
+    
+    if (!nome || !email) {
+        alert('Preencha todos os campos!');
+        return;
+    }
+    
+    $.ajax({
+        url: '/perfil/atualizar',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            nome: nome,
+            email: email
+        }),
+        success: function(response) {
+            if (response.success) {
+                alert(response.mensagem);
+                location.reload();
+            } else {
+                alert(response.mensagem);
+            }
+        },
+        error: function() {
+            alert('Erro ao atualizar perfil');
+        }
+    });
+}
+
+// Função para alterar senha
+function alterarSenha() {
+    var senhaAtual = $('#senha_atual').val();
+    var novaSenha = $('#nova_senha').val();
+    var confirmarSenha = $('#confirmar_senha').val();
+    
+    if (!senhaAtual || !novaSenha || !confirmarSenha) {
+        alert('Preencha todos os campos!');
+        return;
+    }
+    
+    if (novaSenha !== confirmarSenha) {
+        alert('As novas senhas não conferem!');
+        return;
+    }
+    
+    if (novaSenha.length < 6) {
+        alert('A nova senha deve ter no mínimo 6 caracteres!');
+        return;
+    }
+    
+    $.ajax({
+        url: '/perfil/alterar-senha',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            senha_atual: senhaAtual,
+            nova_senha: novaSenha
+        }),
+        success: function(response) {
+            if (response.success) {
+                alert(response.mensagem);
+                $('#alterarSenhaModal').modal('hide');
+                $('#formAlterarSenha')[0].reset();
+            } else {
+                alert(response.mensagem);
+            }
+        },
+        error: function() {
+            alert('Erro ao alterar senha');
+        }
+    });
+}
+
+// Validação de email em tempo real
+$('#edit_email').on('blur', function() {
+    var email = $(this).val();
+    var emailOriginal = "{{ current_user.email }}";
+    
+    if (email !== emailOriginal && email.length > 5) {
+        $.get('/verificar-email', {email: email}, function(data) {
+            var feedback = $('#email-feedback');
+            if (data.disponivel) {
+                feedback.html('<span class="text-success"><i class="bi bi-check-circle"></i> Email disponível</span>');
+            } else {
+                feedback.html('<span class="text-danger"><i class="bi bi-exclamation-circle"></i> ' + data.mensagem + '</span>');
+            }
+        });
+    }
+});
+
+// Validação de senha em tempo real
+$('#confirmar_senha').on('keyup', function() {
+    var novaSenha = $('#nova_senha').val();
+    var confirmarSenha = $(this).val();
+    var feedback = $('#senha-feedback');
+    
+    if (confirmarSenha.length > 0) {
+        if (novaSenha === confirmarSenha) {
+            feedback.html('<span class="text-success"><i class="bi bi-check-circle"></i> Senhas conferem</span>');
+        } else {
+            feedback.html('<span class="text-danger"><i class="bi bi-exclamation-circle"></i> Senhas não conferem</span>');
+        }
+    } else {
+        feedback.html('');
+    }
+});
+</script>
+{% endblock %}

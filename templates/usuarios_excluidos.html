@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-archive"></i> Usuários Excluídos</h1>
+    <a href="{{ url_for('listar_usuarios') }}" class="btn btn-primary">
+        <i class="bi bi-arrow-left"></i> Voltar para Usuários Ativos
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if usuarios %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nome Original</th>
+                        <th>Email</th>
+                        <th>Tipo</th>
+                        <th>Data Exclusão</th>
+                        <th>Excluído por</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for usuario in usuarios %}
+                    <tr class="table-danger">
+                        <td>{{ usuario.id }}</td>
+                        <td>{{ usuario.nome }}</td>
+                        <td><small class="text-muted">{{ usuario.email[:50] }}...</small></td>
+                        <td>
+                            {% if usuario.is_admin %}
+                                <span class="badge bg-primary">Admin</span>
+                            {% elif usuario.is_tecnico %}
+                                <span class="badge bg-info">Técnico</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Usuário</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ usuario.data_exclusao.strftime('%d/%m/%Y %H:%M') if usuario.data_exclusao else 'N/A' }}</td>
+                        <td>{{ usuario.excluidor.nome if usuario.excluidor else 'N/A' }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-success" onclick="restaurarUsuario({{ usuario.id }}, '{{ usuario.nome }}')">
+                                <i class="bi bi-arrow-counterclockwise"></i> Restaurar
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            Nenhum usuário excluído encontrado.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function restaurarUsuario(userId, userName) {
+    if (confirm(`Deseja restaurar o usuário ${userName}?`)) {
+        $.ajax({
+            url: `/usuarios/${userId}/restaurar`,
+            method: 'POST',
+            success: function(response) {
+                if (response.success) {
+                    alert(response.mensagem);
+                    location.reload();
+                } else {
+                    alert(response.error || 'Erro ao restaurar usuário');
+                }
+            },
+            error: function() {
+                alert('Erro ao processar solicitação');
+            }
+        });
+    }
+}
+</script>
+{% endblock %}
